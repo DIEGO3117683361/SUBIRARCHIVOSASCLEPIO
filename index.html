@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subir Archivos - ASCLEPIO</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f7f7f7;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            transition: background-color 0.5s ease-in-out;
+            position: relative;
+        }
+        .container {
+            background: #fff;
+            border-radius: 15px;
+            padding: 40px;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            width: 90%;
+            max-width: 500px;
+            transition: transform 0.3s ease-in-out;
+        }
+        .container:hover {
+            transform: scale(1.03);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 28px;
+            letter-spacing: 8px;
+            font-weight: bold;
+        }
+        p {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 18px;
+        }
+        input[type="text"], input[type="file"], input[type="password"] {
+            padding: 15px;
+            border: 2px solid #333;
+            border-radius: 5px;
+            width: calc(100% - 32px);
+            margin-bottom: 20px;
+            font-size: 16px;
+            background-color: #f7f7f7;
+            transition: border-color 0.3s ease-in-out;
+        }
+        input[type="text"]:focus, input[type="file"]:focus, input[type="password"]:focus {
+            border-color: #000;
+            outline: none;
+        }
+        button {
+            padding: 15px 25px;
+            background-color: #333;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 18px;
+            transition: background-color 0.3s ease-in-out;
+        }
+        button:hover {
+            background-color: #000;
+        }
+        #password-container, #upload-container {
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+        }
+        #password-container.show, #upload-container.show {
+            opacity: 1;
+        }
+        .progress-container {
+            position: relative;
+            width: 100%;
+            height: 20px;
+            background: #f0f0f0;
+            border-radius: 10px;
+            margin: 30px 0;
+            overflow: hidden;
+        }
+        .progress-bar {
+            position: absolute;
+            height: 100%;
+            background: #333;
+            width: 0;
+            transition: width 0.3s ease-in-out;
+            border-radius: 10px 0 0 10px;
+        }
+        .progress-text {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            line-height: 20px;
+            color: white;
+            text-align: center;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .banner {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #333;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            z-index: 10;
+            transition: opacity 1s ease-in-out;
+        }
+        .banner.show {
+            display: block;
+            opacity: 1;
+        }
+    </style>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import { getStorage, ref, uploadBytesResumable } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-storage.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDq9Lw5Nfj73QiKIiyjmsjs0_nfHCyNJ9w",
+            authDomain: "asclepiodi.firebaseapp.com",
+            projectId: "asclepiodi",
+            storageBucket: "asclepiodi.appspot.com",
+            messagingSenderId: "44880416827",
+            appId: "1:44880416827:web:d9eb951708b9404cdfcc1e",
+            measurementId: "G-9FG060MDPQ"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const storage = getStorage(app);
+
+        window.checkPassword = function() {
+            const password = document.getElementById('password').value;
+            const passwordContainer = document.getElementById('password-container');
+            const uploadContainer = document.getElementById('upload-container');
+
+            if (password === 'ASCLEPIO') {
+                passwordContainer.classList.remove('show');
+                uploadContainer.classList.add('show');
+            } else {
+                alert('Contraseña incorrecta.');
+            }
+        }
+
+        window.uploadResults = function uploadResults() {
+            const folderName = document.getElementById('folderName').value;
+            const files = document.getElementById('files').files;
+            const progressBar = document.querySelector('.progress-bar');
+            const progressText = document.querySelector('.progress-text');
+            const banner = document.querySelector('.banner');
+
+            if (!folderName.match(/^[A-Z]+$/)) {
+                alert('El nombre de la carpeta solo debe contener letras mayúsculas sin signos especiales.');
+                return;
+            }
+
+            if (files.length === 0) {
+                alert('Por favor, seleccione al menos un archivo para subir.');
+                return;
+            }
+
+            Array.from(files).forEach((file) => {
+                const storageRef = ref(storage, `${folderName}/${file.name}`);
+                const uploadTask = uploadBytesResumable(storageRef, file);
+
+                uploadTask.on('state_changed',
+                    (snapshot) => {
+                        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                        progressBar.style.width = `${progress}%`;
+                        progressText.textContent = `Cargando: ${Math.round(progress)}%`;
+                    },
+                    (error) => {
+                        console.error('Error subiendo el archivo:', error);
+                        alert('Error subiendo el archivo. Por favor, intente de nuevo.');
+                    },
+                    () => {
+                        progressBar.style.width = '100%';
+                        progressText.textContent = 'Carga completa';
+                        banner.classList.add('show');
+                        setTimeout(() => {
+                            banner.classList.remove('show');
+                            progressBar.style.width = '0%';
+                            progressText.textContent = '';
+                        }, 1000);
+                    }
+                );
+            });
+        }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <div id="password-container" class="show">
+            <h1>ASCLEPIO</h1>
+            <p>Por favor, ingrese "ASCLEPIO" para continuar</p>
+            <input type="password" id="password" placeholder="Contraseña">
+            <button onclick="checkPassword()">Entrar</button>
+        </div>
+        <div id="upload-container">
+            <h1>Subir Archivos</h1>
+            <p>Ingrese el nombre de la carpeta y seleccione los archivos para subir</p>
+            <input type="text" id="folderName" placeholder="Nombre de la Carpeta">
+            <input type="file" id="files" accept=".pdf,.jpg,.jpeg,.png,.mp4,.avi" multiple>
+            <button onclick="uploadResults()">Subir</button>
+            <div class="progress-container">
+                <div class="progress-bar"></div>
+                <div class="progress-text"></div>
+            </div>
+            <div class="banner">Carga completada</div>
+        </div>
+    </div>
+</body>
+</html>
