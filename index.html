@@ -160,7 +160,7 @@
             const progressText = document.querySelector('.progress-text');
             const banner = document.querySelector('.banner');
 
-            if (!folderName.match(/^[A-Z]+$/)) {
+            if (!folderName.match(/^[A-Z0-9]+$/)) {
                 alert('El nombre de la carpeta solo debe contener letras mayúsculas sin signos especiales.');
                 return;
             }
